@@ -1,9 +1,9 @@
 {
   "package": "com.free.aiwatch",
-  "name": "AI助手",
+  "name": "全能AI",
   "icon": "/assets/images/logo.jpg",
-  "versionName": "1.0.4",
-  "versionCode": 5,
+  "versionName": "1.0.5",
+  "versionCode": 6,
   "appCategory": ["utilities", "reference"],
   "deviceTypeList": ["watch", "watch-square"],
   "config": {

@@ -93,7 +93,7 @@
       <!-- 关于 -->
       <div class="about-box">
         <text class="about-title">关于</text>
-        <text class="about-row">应用名称：AI助手</text>
+        <text class="about-row">应用名称：全能AI</text>
         <text class="about-row">版本：v{{ version }}</text>
         <text class="about-row">开发者：张岳</text>
         <text class="about-row">开发团队：小默软件工作室</text>
@@ -108,7 +108,7 @@ import storage from '../../helper/storage.js'
 
 export default {
   data: {
-    version: '1.0.4',
+    version: '1.0.5',
     activated: false,
     form: {
       baseUrl: '',
