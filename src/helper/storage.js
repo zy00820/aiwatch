@@ -8,6 +8,17 @@ import kvstore from '@blueos.storage.kvstore'
 
 const KEY_SETTINGS = 'ai_settings'
 const KEY_HISTORY = 'ai_history'
+const KEY_ACTIVATION = 'ai_activation'
+
+// 离线激活码（本地校验，无需联网）
+const VALID_CODE = 'b32000'
+
+// 付款与联系方式说明
+const ACTIVATION_NOTICE = {
+  price: '4元',
+  contact: 'zy291817@outlook.com',
+  note: '付款4元后凭支付证明联系邮箱获取激活码'
+}
 
 // 默认值（与 app.ux 中保持一致）
 const DEFAULT_SETTINGS = {
@@ -16,6 +27,55 @@ const DEFAULT_SETTINGS = {
   model: 'Qwen/Qwen2.5-7B-Instruct',
   systemPrompt: '你是一个简洁的智能助手，请用尽量短的中文回答，适合手表小屏幕阅读。'
 }
+
+/**
+ * 读取激活状态
+ * @returns {Promise<boolean>} 是否已激活
+ */
+export function isActivated() {
+  return new Promise((resolve) => {
+    kvstore.get({
+      key: KEY_ACTIVATION,
+      success: (data) => resolve(data === true || data === 'true'),
+      fail: () => resolve(false)
+    })
+  })
+}
+
+/**
+ * 校验激活码并写入激活状态
+ * @param {string} code 用户输入的激活码
+ * @returns {Promise<boolean>} 是否激活成功
+ */
+export function activate(code) {
+  return new Promise((resolve) => {
+    if (String(code || '').trim() === VALID_CODE) {
+      kvstore.set({
+        key: KEY_ACTIVATION,
+        value: true,
+        success: () => resolve(true),
+        fail: () => resolve(false)
+      })
+    } else {
+      resolve(false)
+    }
+  })
+}
+
+/**
+ * 重置激活状态（仅用于调试/退出登录）
+ */
+export function deactivate() {
+  return new Promise((resolve) => {
+    kvstore.set({
+      key: KEY_ACTIVATION,
+      value: false,
+      success: () => resolve(true),
+      fail: () => resolve(false)
+    })
+  })
+}
+
 
 /**
  * 读取设置（如不存在则返回默认值）
@@ -97,9 +157,15 @@ export function clearHistory() {
 
 export default {
   DEFAULT_SETTINGS,
+  ACTIVATION_NOTICE,
+  VALID_CODE,
+  isActivated,
+  activate,
+  deactivate,
   getSettings,
   setSettings,
   getHistory,
   setHistory,
   clearHistory
 }
+

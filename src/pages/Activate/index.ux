@@ -1,0 +1,241 @@
+<template>
+  <div class="container">
+    <!-- 标题栏 -->
+    <div class="header">
+      <text class="back-btn" onclick="onBack">&lt; 返回</text>
+      <text class="title">激活</text>
+    </div>
+
+    <scroll class="body" scroll-y="true">
+      <!-- 激活状态 -->
+      <div class="status-box {{ activated ? 'ok' : 'pending' }}">
+        <text class="status-text">{{ activated ? '已激活' : '未激活' }}</text>
+      </div>
+
+      <!-- 输入激活码 -->
+      <div class="row" if="{{ !activated }}">
+        <text class="label">输入激活码</text>
+        <input
+          id="codeInput"
+          class="field"
+          type="text"
+          value="{{ code }}"
+          placeholder="请输入激活码"
+          onchange="onCodeChange"
+        ></input>
+
+        <input
+          class="activate-btn"
+          type="button"
+          value="激活"
+          onclick="onActivate"
+        ></input>
+
+        <text class="tip" if="{{ errMsg }}">{{ errMsg }}</text>
+      </div>
+
+      <!-- 已激活 -->
+      <div class="row" if="{{ activated }}">
+        <text class="ok-text">应用已激活，可正常使用。</text>
+      </div>
+
+      <!-- 付款说明 -->
+      <div class="pay-box">
+        <text class="pay-title">购买激活码</text>
+        <text class="pay-row">价格：{{ price }}</text>
+        <text class="pay-row">付款后凭支付证明联系：</text>
+        <text class="pay-row contact">{{ contact }}</text>
+        <text class="pay-note">获取激活码后填入上方输入框即可离线激活</text>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import storage from '../../helper/storage.js'
+
+export default {
+  data: {
+    activated: false,
+    code: '',
+    errMsg: '',
+    price: storage.ACTIVATION_NOTICE.price,
+    contact: storage.ACTIVATION_NOTICE.contact
+  },
+
+  async onInit() {
+    this.activated = await storage.isActivated()
+  },
+
+  onCodeChange(e) {
+    this.code = (e && e.value != null) ? e.value : ''
+    this.errMsg = ''
+  },
+
+  async onActivate() {
+    const ok = await storage.activate(this.code)
+    if (ok) {
+      this.activated = true
+      this.errMsg = ''
+      this.showToast('激活成功')
+    } else {
+      this.errMsg = '激活码错误，请检查'
+    }
+  },
+
+  onBack() {
+    try {
+      this.$page.back && this.$page.back()
+    } catch (e) {
+      const router = require('@blueos.app.router')
+      router.back && router.back()
+    }
+  },
+
+  showToast(text) {
+    try {
+      const prompt = require('@blueos.app.prompt')
+      prompt.showToast({ message: text })
+    } catch (e) {
+      console.log('toast:', text)
+    }
+  }
+}
+</script>
+
+<style>
+.container {
+  flex-direction: column;
+  width: 466px;
+  height: 466px;
+  background-color: #f5f6f8;
+}
+
+.header {
+  height: 70px;
+  flex-direction: row;
+  align-items: center;
+  background-color: #1890ff;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.back-btn {
+  font-size: 26px;
+  color: #ffffff;
+}
+
+.title {
+  font-size: 30px;
+  color: #ffffff;
+  font-weight: bold;
+  margin-left: 20px;
+}
+
+.body {
+  flex: 1;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.status-box {
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.status-box.ok {
+  background-color: #e6f9ed;
+}
+
+.status-box.pending {
+  background-color: #fff4e6;
+}
+
+.status-text {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.status-box.ok .status-text {
+  color: #52c41a;
+}
+
+.status-box.pending .status-text {
+  color: #fa8c16;
+}
+
+.row {
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.label {
+  font-size: 24px;
+  color: #666666;
+  margin-bottom: 8px;
+}
+
+.field {
+  height: 70px;
+  font-size: 26px;
+  padding-left: 16px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.activate-btn {
+  height: 80px;
+  font-size: 30px;
+  color: #ffffff;
+  background-color: #1890ff;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.tip {
+  font-size: 22px;
+  color: #f5222d;
+  margin-top: 8px;
+}
+
+.ok-text {
+  font-size: 26px;
+  color: #52c41a;
+  margin-top: 10px;
+}
+
+.pay-box {
+  margin-top: 10px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  flex-direction: column;
+}
+
+.pay-title {
+  font-size: 26px;
+  color: #1890ff;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.pay-row {
+  font-size: 22px;
+  color: #333333;
+  margin-top: 6px;
+}
+
+.contact {
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.pay-note {
+  font-size: 20px;
+  color: #999999;
+  margin-top: 10px;
+}
+</style>

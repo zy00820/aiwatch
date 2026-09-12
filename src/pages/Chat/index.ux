@@ -66,10 +66,18 @@ export default {
     inputText: '',
     loading: false,
     messages: [],
-    settings: {}
+    settings: {},
+    activated: false
   },
 
   async onInit() {
+    // 激活校验：未激活直接跳激活页
+    const activated = await storage.isActivated()
+    this.activated = activated
+    if (!activated) {
+      this.gotoActivate()
+      return
+    }
     // 读取本地设置
     this.settings = await storage.getSettings()
     // 读取本地历史
@@ -80,12 +88,28 @@ export default {
   },
 
   onShow() {
-    // 从设置页返回时刷新设置
-    this.refreshSettings()
+    // 从设置页/激活页返回时刷新
+    this.refreshAll()
   },
 
-  async refreshSettings() {
+  async refreshAll() {
+    const activated = await storage.isActivated()
+    this.activated = activated
+    if (!activated) {
+      this.gotoActivate()
+      return
+    }
     this.settings = await storage.getSettings()
+  },
+
+  // 跳转激活页
+  gotoActivate() {
+    try {
+      const router = require('@blueos.app.router')
+      router.push({ uri: '/Activate' })
+    } catch (e) {
+      console.log('router push failed: ' + e)
+    }
   },
 
   // 输入框内容变化
@@ -114,6 +138,16 @@ export default {
     const text = String(this.inputText || '').trim()
     if (!text) return
     if (this.loading) return
+
+    // 防御性激活检查
+    const activated = await storage.isActivated()
+    if (!activated) {
+      this.activated = false
+      this.pushMessage('assistant', '请先激活应用后再使用')
+      this.gotoActivate()
+      return
+    }
+    this.activated = true
 
     if (!this.settings.apiKey) {
       this.pushMessage('assistant', '请先在设置中填写 API Key')

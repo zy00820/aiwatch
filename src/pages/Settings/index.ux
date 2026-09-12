@@ -7,6 +7,18 @@
     </div>
 
     <scroll class="body" scroll-y="true">
+      <!-- 激活状态 -->
+      <div class="act-box {{ activated ? 'act-ok' : 'act-pending' }}">
+        <text class="act-label">激活状态：</text>
+        <text class="act-value">{{ activated ? '已激活' : '未激活' }}</text>
+      </div>
+      <input
+        class="activate-entry-btn"
+        type="button"
+        value="{{ activated ? '查看激活信息' : '输入激活码' }}"
+        onclick="onGotoActivate"
+      ></input>
+
       <!-- 接口地址 -->
       <div class="row">
         <text class="label">接口地址</text>
@@ -96,7 +108,8 @@ import storage from '../../helper/storage.js'
 
 export default {
   data: {
-    version: '1.0.0',
+    version: '1.0.1',
+    activated: false,
     form: {
       baseUrl: '',
       apiKey: '',
@@ -106,12 +119,27 @@ export default {
   },
 
   async onInit() {
+    this.activated = await storage.isActivated()
     const settings = await storage.getSettings()
     this.form = {
       baseUrl: settings.baseUrl,
       apiKey: settings.apiKey,
       model: settings.model,
       systemPrompt: settings.systemPrompt
+    }
+  },
+
+  async onShow() {
+    // 从激活页返回后刷新激活状态
+    this.activated = await storage.isActivated()
+  },
+
+  onGotoActivate() {
+    try {
+      const router = require('@blueos.app.router')
+      router.push({ uri: '/Activate' })
+    } catch (e) {
+      console.log('router push failed: ' + e)
     }
   },
 
@@ -262,6 +290,52 @@ export default {
   font-size: 22px;
   color: #999999;
   margin-top: 4px;
+}
+
+.act-box {
+  flex-direction: row;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.act-box.act-ok {
+  background-color: #e6f9ed;
+}
+
+.act-box.act-pending {
+  background-color: #fff4e6;
+}
+
+.act-label {
+  font-size: 24px;
+  color: #333333;
+}
+
+.act-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.act-ok .act-value {
+  color: #52c41a;
+}
+
+.act-pending .act-value {
+  color: #fa8c16;
+}
+
+.activate-entry-btn {
+  height: 70px;
+  font-size: 26px;
+  color: #1890ff;
+  background-color: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border-color: #1890ff;
+  border-width: 1px;
 }
 
 .about-box {
