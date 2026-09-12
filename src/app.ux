@@ -1,0 +1,21 @@
+<script>
+/**
+ * 应用入口：暴露全局配置默认值，供页面通过 this.$app.$def 访问
+ */
+export default {
+  onCreate() {
+    console.log('AI助手 应用创建')
+  },
+  onDestroy() {
+    console.log('AI助手 应用销毁')
+  },
+  // 全局默认配置（用户未在设置页填写时使用）
+  config: {
+    // 默认接入 SiliconFlow 免费开放平台（用户可在 https://cloud.siliconflow.cn 免费领取 API Key）
+    baseUrl: 'https://api.siliconflow.cn/v1/chat/completions',
+    apiKey: '',
+    model: 'Qwen/Qwen2.5-7B-Instruct',
+    systemPrompt: '你是一个简洁的智能助手，请用尽量短的中文回答，适合手表小屏幕阅读。'
+  }
+}
+</script>

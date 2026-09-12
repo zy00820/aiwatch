@@ -1,0 +1,287 @@
+<template>
+  <div class="container">
+    <!-- 标题栏 -->
+    <div class="header">
+      <text class="back-btn" onclick="onBack">&lt; 返回</text>
+      <text class="title">设置</text>
+    </div>
+
+    <scroll class="body" scroll-y="true">
+      <!-- 接口地址 -->
+      <div class="row">
+        <text class="label">接口地址</text>
+        <input
+          class="field"
+          type="text"
+          value="{{ form.baseUrl }}"
+          placeholder="https://api.xxx/v1/chat/completions"
+          onchange="onBaseUrlChange"
+        ></input>
+      </div>
+
+      <!-- API Key -->
+      <div class="row">
+        <text class="label">API Key</text>
+        <input
+          class="field"
+          type="text"
+          value="{{ form.apiKey }}"
+          placeholder="sk-..."
+          onchange="onApiKeyChange"
+        ></input>
+      </div>
+
+      <!-- 模型 -->
+      <div class="row">
+        <text class="label">模型</text>
+        <input
+          class="field"
+          type="text"
+          value="{{ form.model }}"
+          placeholder="Qwen/Qwen2.5-7B-Instruct"
+          onchange="onModelChange"
+        ></input>
+      </div>
+
+      <!-- 系统提示词 -->
+      <div class="row">
+        <text class="label">系统提示词</text>
+        <input
+          class="field"
+          type="text"
+          value="{{ form.systemPrompt }}"
+          placeholder="例如：你是简洁的助手"
+          onchange="onPromptChange"
+        ></input>
+      </div>
+
+      <!-- 保存 -->
+      <input
+        class="save-btn"
+        type="button"
+        value="保存"
+        onclick="onSave"
+      ></input>
+
+      <input
+        class="reset-btn"
+        type="button"
+        value="恢复默认"
+        onclick="onReset"
+      ></input>
+
+      <div class="tip-box">
+        <text class="tip-title">免费接入说明</text>
+        <text class="tip">1. 登录 SiliconFlow 官网</text>
+        <text class="tip">2. 领取免费 API Key</text>
+        <text class="tip">3. 粘贴到上方，保存即可</text>
+        <text class="tip">兼容 OpenAI 协议接口</text>
+      </div>
+
+      <!-- 关于 -->
+      <div class="about-box">
+        <text class="about-title">关于</text>
+        <text class="about-row">应用名称：AI助手</text>
+        <text class="about-row">版本：v{{ version }}</text>
+        <text class="about-row">开发者：张岳</text>
+        <text class="about-row">开发团队：小默软件工作室</text>
+        <text class="about-row">联系方式：zy291817@outlook.com</text>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import storage from '../../helper/storage.js'
+
+export default {
+  data: {
+    version: '1.0.0',
+    form: {
+      baseUrl: '',
+      apiKey: '',
+      model: '',
+      systemPrompt: ''
+    }
+  },
+
+  async onInit() {
+    const settings = await storage.getSettings()
+    this.form = {
+      baseUrl: settings.baseUrl,
+      apiKey: settings.apiKey,
+      model: settings.model,
+      systemPrompt: settings.systemPrompt
+    }
+  },
+
+  onBaseUrlChange(e) {
+    this.form.baseUrl = (e && e.value != null) ? e.value : ''
+  },
+
+  onApiKeyChange(e) {
+    this.form.apiKey = (e && e.value != null) ? e.value : ''
+  },
+
+  onModelChange(e) {
+    this.form.model = (e && e.value != null) ? e.value : ''
+  },
+
+  onPromptChange(e) {
+    this.form.systemPrompt = (e && e.value != null) ? e.value : ''
+  },
+
+  async onSave() {
+    const ok = await storage.setSettings(this.form)
+    this.showToast(ok ? '已保存' : '保存失败')
+    if (ok) {
+      this.onBack()
+    }
+  },
+
+  onReset() {
+    this.form = {
+      baseUrl: storage.DEFAULT_SETTINGS.baseUrl,
+      apiKey: '',
+      model: storage.DEFAULT_SETTINGS.model,
+      systemPrompt: storage.DEFAULT_SETTINGS.systemPrompt
+    }
+  },
+
+  onBack() {
+    try {
+      this.$page.back && this.$page.back()
+    } catch (e) {
+      const router = require('@blueos.app.router')
+      router.back && router.back()
+    }
+  },
+
+  showToast(text) {
+    try {
+      const prompt = require('@blueos.app.prompt')
+      prompt.showToast({ message: text })
+    } catch (e) {
+      console.log('toast:', text)
+    }
+  }
+}
+</script>
+
+<style>
+.container {
+  flex-direction: column;
+  width: 466px;
+  height: 466px;
+  background-color: #f5f6f8;
+}
+
+.header {
+  height: 70px;
+  flex-direction: row;
+  align-items: center;
+  background-color: #1890ff;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.back-btn {
+  font-size: 26px;
+  color: #ffffff;
+}
+
+.title {
+  font-size: 30px;
+  color: #ffffff;
+  font-weight: bold;
+  margin-left: 20px;
+}
+
+.body {
+  flex: 1;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.row {
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.label {
+  font-size: 24px;
+  color: #666666;
+  margin-bottom: 8px;
+}
+
+.field {
+  height: 70px;
+  font-size: 24px;
+  padding-left: 16px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.save-btn {
+  height: 80px;
+  font-size: 30px;
+  color: #ffffff;
+  background-color: #1890ff;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.reset-btn {
+  height: 70px;
+  font-size: 26px;
+  color: #1890ff;
+  background-color: #ffffff;
+  border-radius: 12px;
+  margin-top: 12px;
+  border-color: #1890ff;
+  border-width: 1px;
+}
+
+.tip-box {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  flex-direction: column;
+}
+
+.tip-title {
+  font-size: 24px;
+  color: #1890ff;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.tip {
+  font-size: 22px;
+  color: #999999;
+  margin-top: 4px;
+}
+
+.about-box {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  flex-direction: column;
+}
+
+.about-title {
+  font-size: 26px;
+  color: #1890ff;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.about-row {
+  font-size: 22px;
+  color: #333333;
+  margin-top: 6px;
+}
+</style>

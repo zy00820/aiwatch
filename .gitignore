@@ -1,0 +1,34 @@
+# 依赖
+node_modules/
+.pnpm-store/
+.yarn/
+
+# 编译产物
+dist/
+build/
+.rpp/
+*.rpk
+*.rpks
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 签名与密钥（切勿提交）
+sign/
+*.pem
+*.p12
+*.keystore
+.env
+.env.local
+
+# 临时文件
+*.tmp
+.cache/

@@ -1,0 +1,285 @@
+<template>
+  <div class="container">
+    <!-- 顶部标题栏 -->
+    <div class="header">
+      <text class="title">AI 助手</text>
+      <div class="header-actions">
+        <text class="action-btn" onclick="onClear">清空</text>
+        <text class="action-btn" onclick="onSettings">设置</text>
+      </div>
+    </div>
+
+    <!-- 消息列表 -->
+    <list class="msg-list" id="msgList">
+      <list-item
+        class="msg-item"
+        type="msg"
+        for="{{ messages }}"
+      >
+        <div class="msg-bubble {{ $item.role === 'user' ? 'msg-user' : 'msg-ai' }}">
+          <text class="msg-text">{{ $item.content }}</text>
+        </div>
+      </list-item>
+
+      <!-- 加载中提示 -->
+      <list-item class="msg-item" type="loading" if="{{ loading }}">
+        <div class="msg-bubble msg-ai">
+          <text class="msg-text">正在思考…</text>
+        </div>
+      </list-item>
+
+      <!-- 空状态 -->
+      <list-item class="msg-item" type="empty" if="{{ messages.length === 0 && !loading }}">
+        <div class="empty-wrap">
+          <text class="empty-text">你好，我是 AI 助手</text>
+          <text class="empty-sub">支持联网，请先在设置中填写 API Key</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 输入区 -->
+    <div class="input-bar">
+      <input
+        id="msgInput"
+        class="input"
+        type="text"
+        value="{{ inputText }}"
+        placeholder="输入问题"
+        onchange="onInputChange"
+      ></input>
+      <input
+        class="send-btn"
+        type="button"
+        value="发送"
+        onclick="onSend"
+      ></input>
+    </div>
+  </div>
+</template>
+
+<script>
+import ai from '../../helper/ai.js'
+import storage from '../../helper/storage.js'
+
+export default {
+  data: {
+    inputText: '',
+    loading: false,
+    messages: [],
+    settings: {}
+  },
+
+  async onInit() {
+    // 读取本地设置
+    this.settings = await storage.getSettings()
+    // 读取本地历史
+    const history = await storage.getHistory()
+    this.messages = history
+    // 滚动到底部
+    this.delayScroll()
+  },
+
+  onShow() {
+    // 从设置页返回时刷新设置
+    this.refreshSettings()
+  },
+
+  async refreshSettings() {
+    this.settings = await storage.getSettings()
+  },
+
+  // 输入框内容变化
+  onInputChange(e) {
+    this.inputText = (e && e.value != null) ? e.value : ''
+  },
+
+  // 跳转设置页
+  onSettings() {
+    try {
+      const router = require('@blueos.app.router')
+      router.push({ uri: '/Settings' })
+    } catch (e) {
+      console.log('router push failed: ' + e)
+    }
+  },
+
+  // 清空对话
+  async onClear() {
+    this.messages = []
+    await storage.clearHistory()
+  },
+
+  // 发送消息
+  async onSend() {
+    const text = String(this.inputText || '').trim()
+    if (!text) return
+    if (this.loading) return
+
+    if (!this.settings.apiKey) {
+      this.pushMessage('assistant', '请先在设置中填写 API Key')
+      return
+    }
+
+    // 追加用户消息
+    this.pushMessage('user', text)
+    this.inputText = ''
+    this.loading = true
+
+    try {
+      const reply = await ai.chat({
+        baseUrl: this.settings.baseUrl,
+        apiKey: this.settings.apiKey,
+        model: this.settings.model,
+        systemPrompt: this.settings.systemPrompt,
+        history: this.messages,
+        userText: text
+      })
+      this.pushMessage('assistant', reply)
+    } catch (err) {
+      const msg = (err && err.message) ? err.message : '请求失败'
+      this.pushMessage('assistant', '出错：' + msg)
+    } finally {
+      this.loading = false
+    }
+  },
+
+  // 追加一条消息并持久化
+  pushMessage(role, content) {
+    const item = { role, content, time: Date.now() }
+    this.messages = this.messages.concat([item])
+    storage.setHistory(this.messages)
+    this.delayScroll()
+  },
+
+  // 延迟滚动到底部，等待渲染完成
+  delayScroll() {
+    setTimeout(() => {
+      try {
+        const list = this.$element('msgList')
+        list && list.revealScrollbar && list.revealScrollbar()
+      } catch (e) {}
+    }, 80)
+  }
+}
+</script>
+
+<style>
+.container {
+  flex-direction: column;
+  width: 466px;
+  height: 466px;
+  background-color: #f5f6f8;
+}
+
+.header {
+  height: 70px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 20px;
+  padding-right: 20px;
+  background-color: #1890ff;
+}
+
+.title {
+  font-size: 32px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.header-actions {
+  flex-direction: row;
+  align-items: center;
+}
+
+.action-btn {
+  font-size: 24px;
+  color: #ffffff;
+  margin-left: 20px;
+}
+
+.msg-list {
+  flex: 1;
+  flex-direction: column;
+  padding: 10px 16px;
+}
+
+.msg-item {
+  margin-bottom: 10px;
+}
+
+.msg-bubble {
+  padding: 16px 20px;
+  border-radius: 16px;
+  max-width: 380px;
+}
+
+.msg-ai {
+  background-color: #ffffff;
+  align-self: flex-start;
+}
+
+.msg-user {
+  background-color: #1890ff;
+  align-self: flex-end;
+}
+
+.msg-text {
+  font-size: 26px;
+  color: #333333;
+  line-height: 1.4;
+}
+
+.msg-user .msg-text {
+  color: #ffffff;
+}
+
+.empty-wrap {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 60px;
+}
+
+.empty-text {
+  font-size: 30px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.empty-sub {
+  font-size: 22px;
+  color: #999999;
+  text-align: center;
+}
+
+.input-bar {
+  height: 100px;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border-top-color: #e6e6e6;
+  border-top-width: 1px;
+}
+
+.input {
+  flex: 1;
+  height: 70px;
+  font-size: 26px;
+  padding-left: 16px;
+  border-radius: 12px;
+  background-color: #f0f2f5;
+  color: #333333;
+}
+
+.send-btn {
+  width: 120px;
+  height: 70px;
+  margin-left: 14px;
+  font-size: 28px;
+  color: #ffffff;
+  background-color: #1890ff;
+  border-radius: 12px;
+}
+</style>

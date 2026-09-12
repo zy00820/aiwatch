@@ -1,0 +1,13 @@
+{
+  "name": "vivo-watch-ai",
+  "version": "1.0.0",
+  "description": "免费 AI 助手 - 适配 vivo Watch GT2 / BlueOS 3，支持联网",
+  "author": "you",
+  "private": true,
+  "scripts": {
+    "dev": "watch",
+    "build": "build"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
