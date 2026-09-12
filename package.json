@@ -8,6 +8,7 @@
     "dev": "watch",
     "build": "build"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "hap-toolkit": "^2.1.1"
+  }
 }

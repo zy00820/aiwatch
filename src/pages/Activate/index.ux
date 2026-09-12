@@ -8,8 +8,8 @@
 
     <scroll class="body" scroll-y="true">
       <!-- 激活状态 -->
-      <div class="status-box {{ activated ? 'ok' : 'pending' }}">
-        <text class="status-text">{{ activated ? '已激活' : '未激活' }}</text>
+      <div class="{{ activated ? 'status-box-ok' : 'status-box-pending' }}">
+        <text class="{{ activated ? 'status-text-ok' : 'status-text-pending' }}">{{ activated ? '已激活' : '未激活' }}</text>
       </div>
 
       <!-- 输入激活码 -->
@@ -44,7 +44,7 @@
         <text class="pay-title">购买激活码</text>
         <text class="pay-row">价格：{{ price }}</text>
         <text class="pay-row">付款后凭支付证明联系：</text>
-        <text class="pay-row contact">{{ contact }}</text>
+        <text class="pay-contact">{{ contact }}</text>
 
         <!-- 微信支付二维码 -->
         <div class="qr-wrap">
@@ -147,31 +147,31 @@ export default {
   padding: 12px;
 }
 
-.status-box {
+.status-box-ok {
   padding: 12px;
   border-radius: 10px;
   margin-bottom: 12px;
   align-items: center;
-}
-
-.status-box.ok {
   background-color: #e6f9ed;
 }
 
-.status-box.pending {
+.status-box-pending {
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  align-items: center;
   background-color: #fff4e6;
 }
 
-.status-text {
+.status-text-ok {
   font-size: 26px;
   font-weight: bold;
-}
-
-.status-box.ok .status-text {
   color: #52c41a;
 }
 
-.status-box.pending .status-text {
+.status-text-pending {
+  font-size: 26px;
+  font-weight: bold;
   color: #fa8c16;
 }
 
@@ -237,9 +237,11 @@ export default {
   margin-top: 4px;
 }
 
-.contact {
+.pay-contact {
+  font-size: 20px;
   color: #1890ff;
   font-weight: bold;
+  margin-top: 4px;
 }
 
 .pay-note {

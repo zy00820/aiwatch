@@ -2,8 +2,8 @@
   "package": "com.free.aiwatch",
   "name": "AI助手",
   "icon": "/assets/images/logo.jpg",
-  "versionName": "1.0.3",
-  "versionCode": 4,
+  "versionName": "1.0.4",
+  "versionCode": 5,
   "appCategory": ["utilities", "reference"],
   "deviceTypeList": ["watch", "watch-square"],
   "config": {
@@ -16,19 +16,16 @@
     { "name": "blueos.app.app" }
   ],
   "router": {
-    "entry": "Chat",
+    "entry": "pages/Chat",
     "pages": {
-      "Chat": {
-        "component": "index",
-        "path": "Chat"
+      "pages/Chat": {
+        "component": "index"
       },
-      "Settings": {
-        "component": "index",
-        "path": "Settings"
+      "pages/Settings": {
+        "component": "index"
       },
-      "Activate": {
-        "component": "index",
-        "path": "Activate"
+      "pages/Activate": {
+        "component": "index"
       }
     }
   }
