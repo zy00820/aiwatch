@@ -1,0 +1,109 @@
+<template>
+  <div class="container">
+    <!-- 顶部操作栏 -->
+    <div class="header">
+      <text class="title">全能AI</text>
+      <text class="action-btn" onclick="onSettings">设置</text>
+    </div>
+
+    <!-- web 组件：加载本地 AI 聊天 HTML -->
+    <web
+      class="webview"
+      src="/assets/chat.html"
+      showloadingdialog="true"
+      supportzoom="false"
+      allowthirdpartycookies="true"
+      onpagefinish="onPageFinish"
+      onerror="onError"
+    ></web>
+  </div>
+</template>
+
+<script>
+import storage from '../../helper/storage.js'
+
+export default {
+  data: {
+    loaded: false
+  },
+
+  async onInit() {
+    // 激活校验
+    const activated = await storage.isActivated()
+    if (!activated) {
+      this.gotoActivate()
+      return
+    }
+  },
+
+  onShow() {
+    const activated = await storage.isActivated()
+    if (!activated) {
+      this.gotoActivate()
+    }
+  },
+
+  gotoActivate() {
+    try {
+      const router = require('@blueos.app.router')
+      router.push({ uri: '/Activate' })
+    } catch (e) {
+      console.log('router push failed: ' + e)
+    }
+  },
+
+  onSettings() {
+    try {
+      const router = require('@blueos.app.router')
+      router.push({ uri: '/Settings' })
+    } catch (e) {
+      console.log('router push failed: ' + e)
+    }
+  },
+
+  onPageFinish(e) {
+    this.loaded = true
+    console.log('web page loaded: ' + (e && e.url))
+  },
+
+  onError(e) {
+    console.log('web error: ' + JSON.stringify(e))
+  }
+}
+</script>
+
+<style>
+/* vivo Watch GT2: 432×514 圆角矩形屏幕 */
+.container {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f6f8;
+}
+
+.header {
+  height: 50px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 14px;
+  padding-right: 14px;
+  background-color: #1890ff;
+}
+
+.title {
+  font-size: 26px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.action-btn {
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.webview {
+  flex: 1;
+  width: 100%;
+}
+</style>

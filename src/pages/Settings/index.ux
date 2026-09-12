@@ -108,7 +108,7 @@ import storage from '../../helper/storage.js'
 
 export default {
   data: {
-    version: '1.0.5',
+    version: '1.0.6',
     activated: false,
     form: {
       baseUrl: '',

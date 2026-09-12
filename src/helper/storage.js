@@ -21,10 +21,11 @@ const ACTIVATION_NOTICE = {
 }
 
 // 默认值（与 app.ux 中保持一致）
+// 智谱 GLM-4.7-Flash：国内直连、永久免费、秒级响应
 const DEFAULT_SETTINGS = {
-  baseUrl: 'https://api.siliconflow.cn/v1/chat/completions',
+  baseUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
   apiKey: '',
-  model: 'Qwen/Qwen2.5-7B-Instruct',
+  model: 'glm-4.7-flash',
   systemPrompt: '你是一个简洁的智能助手，请用尽量短的中文回答，适合手表小屏幕阅读。'
 }
 
