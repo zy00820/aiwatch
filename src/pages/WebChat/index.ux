@@ -36,7 +36,7 @@ export default {
     }
   },
 
-  onShow() {
+  async onShow() {
     const activated = await storage.isActivated()
     if (!activated) {
       this.gotoActivate()
