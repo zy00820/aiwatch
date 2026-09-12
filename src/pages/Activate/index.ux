@@ -39,12 +39,20 @@
         <text class="ok-text">应用已激活，可正常使用。</text>
       </div>
 
-      <!-- 付款说明 -->
+      <!-- 付款说明 + 微信支付二维码 -->
       <div class="pay-box">
         <text class="pay-title">购买激活码</text>
         <text class="pay-row">价格：{{ price }}</text>
         <text class="pay-row">付款后凭支付证明联系：</text>
         <text class="pay-row contact">{{ contact }}</text>
+
+        <!-- 微信支付二维码 -->
+        <div class="qr-wrap">
+          <text class="qr-label">微信扫码付款</text>
+          <image class="qr-img" src="/assets/images/wechat-pay-qr.jpg"></image>
+          <text class="qr-tip">长按识别或截图保存到微信扫一扫</text>
+        </div>
+
         <text class="pay-note">获取激活码后填入上方输入框即可离线激活</text>
       </div>
     </scroll>
@@ -237,5 +245,34 @@ export default {
   font-size: 20px;
   color: #999999;
   margin-top: 10px;
+}
+
+.qr-wrap {
+  margin-top: 14px;
+  padding: 14px;
+  background-color: #f7fff7;
+  border-radius: 12px;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-label {
+  font-size: 24px;
+  color: #07c160;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.qr-img {
+  width: 280px;
+  height: 280px;
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+.qr-tip {
+  font-size: 18px;
+  color: #999999;
+  margin-top: 8px;
 }
 </style>
