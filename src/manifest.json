@@ -2,12 +2,12 @@
   "package": "com.free.aiwatch",
   "name": "AI助手",
   "icon": "/assets/images/logo.jpg",
-  "versionName": "1.0.2",
-  "versionCode": 3,
+  "versionName": "1.0.3",
+  "versionCode": 4,
   "appCategory": ["utilities", "reference"],
-  "deviceTypeList": ["watch", "watch-square", "watch-round"],
+  "deviceTypeList": ["watch", "watch-square"],
   "config": {
-    "designWidth": 466
+    "designWidth": 432
   },
   "features": [
     { "name": "blueos.communication.network.fetch" },
