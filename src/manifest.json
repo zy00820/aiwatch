@@ -2,13 +2,11 @@
   "package": "com.free.aiwatch",
   "name": "全能AI",
   "icon": "/assets/images/logo.jpg",
-  "versionName": "1.0.6",
-  "versionCode": 7,
+  "versionName": "1.0.7",
+  "versionCode": 8,
   "appCategory": ["utilities", "reference"],
   "deviceTypeList": ["watch", "watch-square"],
-  "config": {
-    "designWidth": 432
-  },
+  "config": { "designWidth": 432 },
   "features": [
     { "name": "blueos.communication.network.fetch" },
     { "name": "blueos.storage.kvstore" },
@@ -19,18 +17,10 @@
   "router": {
     "entry": "pages/WebChat",
     "pages": {
-      "pages/WebChat": {
-        "component": "index"
-      },
-      "pages/Chat": {
-        "component": "index"
-      },
-      "pages/Settings": {
-        "component": "index"
-      },
-      "pages/Activate": {
-        "component": "index"
-      }
+      "pages/WebChat": { "component": "index" },
+      "pages/Chat": { "component": "index" },
+      "pages/Settings": { "component": "index" },
+      "pages/Activate": { "component": "index" }
     }
   }
 }
