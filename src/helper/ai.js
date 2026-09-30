@@ -1,94 +1,130 @@
 /**
- * AI 请求封装：基于 fetch 调用兼容 OpenAI Chat Completions 的接口
- * 依赖 manifest 中声明的 blueos.communication.network.fetch
- *
- * 适用于：SiliconFlow 免费平台、DeepSeek、OpenAI、Moonshot 等兼容接口
+ * AI 请求封装（require 引入）
  */
-import fetch from '@blueos.communication.network.fetch'
+var fetch = null
+try {
+  fetch = require('@blueos.network.fetch')
+} catch (e) {
+  fetch = null
+}
 
 /**
  * 发送对话请求
  * @param {Object} options
- * @param {string} options.baseUrl   接口地址，例如 https://api.siliconflow.cn/v1/chat/completions
- * @param {string} options.apiKey    API Key（用户在设置页填入）
- * @param {string} options.model     模型名，例如 Qwen/Qwen2.5-7B-Instruct
- * @param {string} options.systemPrompt 系统提示词
- * @param {Array<{role:string,content:string}>} options.history  历史对话
- * @param {string} options.userText  本次用户输入
- * @returns {Promise<string>} AI 回复的文本
+ * @param {string} options.baseUrl
+ * @param {string} options.apiKey
+ * @param {string} options.model
+ * @param {string} options.systemPrompt
+ * @param {Array} options.history - 历史消息（不含本次用户输入）
+ * @param {string} options.userText - 本次用户输入
  */
-export function chat(options) {
-  const {
-    baseUrl,
-    apiKey,
-    model,
-    systemPrompt,
-    history = [],
-    userText
-  } = options || {}
+function chat(options) {
+  options = options || {}
+  var baseUrl = options.baseUrl
+  var apiKey = options.apiKey
+  var model = options.model
+  var systemPrompt = options.systemPrompt
+  var history = options.history || []
+  var userText = options.userText
 
-  return new Promise((resolve, reject) => {
+  return new Promise(function (resolve, reject) {
     if (!baseUrl || !apiKey) {
       reject(new Error('请先在设置页填写接口地址与 API Key'))
       return
     }
 
-    // 组装 messages：system + 历史 + 当前用户输入
-    const messages = []
+    var messages = []
     if (systemPrompt) {
       messages.push({ role: 'system', content: systemPrompt })
     }
-    history.slice(-10).forEach((m) => {
-      if (m && m.role && m.content) {
+    // 只取历史中的 assistant 消息和之前的 user 消息，不包含本次 userText
+    history.slice(-10).forEach(function (m) {
+      if (m && m.role && m.content && m.role !== 'loading') {
         messages.push({ role: m.role, content: m.content })
       }
     })
+    // 本次用户输入只追加一次
     messages.push({ role: 'user', content: userText })
 
-    const body = JSON.stringify({
-      model: model || 'Qwen/Qwen2.5-7B-Instruct',
-      messages,
+    var body = JSON.stringify({
+      model: model || 'glm-4.7-flash',
+      messages: messages,
       stream: false,
       max_tokens: 512,
       temperature: 0.7
     })
 
-    fetch.fetch({
-      url: baseUrl,
-      method: 'POST',
-      header: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      data: body,
-      responseType: 'json',
-      success: (res) => {
-        if (res && res.code && (res.code < 200 || res.code >= 300)) {
-          reject(new Error(`HTTP ${res.code}`))
-          return
+    var settled = false
+    var timer = null
+    if (typeof setTimeout === 'function') {
+      timer = setTimeout(function () {
+        if (!settled) {
+          settled = true
+          reject(new Error('请求超时（30秒），请检查网络'))
         }
-        const data = res && res.data
-        // 兼容 json 响应：data 可能已是对象，也可能是字符串
-        let obj = data
-        if (typeof data === 'string') {
-          try { obj = JSON.parse(data) } catch (e) { obj = null }
-        }
-        const reply = obj && obj.choices && obj.choices[0] && obj.choices[0].message
-          ? obj.choices[0].message.content
-          : ''
-        if (reply) {
-          resolve(reply.trim())
-        } else {
-          reject(new Error('AI 未返回有效内容'))
-        }
-      },
-      fail: (data, code) => {
-        reject(new Error(`请求失败 code=${code} ${data}`))
+      }, 30000)
+    }
+
+    function clearTimer() {
+      if (timer && typeof clearTimeout === 'function') {
+        try { clearTimeout(timer) } catch (e) {}
       }
-    })
+    }
+
+    try {
+      fetch.fetch({
+        url: baseUrl,
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        data: body,
+        responseType: 'json',
+        timeout: 30000,
+        success: function (res) {
+          if (settled) return
+          settled = true
+          clearTimer()
+          try {
+            if (res && res.code && (res.code < 200 || res.code >= 300)) {
+              reject(new Error('HTTP ' + res.code))
+              return
+            }
+            var data = res && res.data
+            var obj = data
+            if (typeof data === 'string') {
+              try { obj = JSON.parse(data) } catch (e) { obj = null }
+            }
+            var reply = obj && obj.choices && obj.choices[0] && obj.choices[0].message
+              ? obj.choices[0].message.content
+              : ''
+            if (reply) {
+              resolve(String(reply).trim())
+            } else {
+              var errMsg = (obj && obj.error && obj.error.message) ? obj.error.message : 'AI 未返回有效内容'
+              reject(new Error(errMsg))
+            }
+          } catch (e) {
+            reject(new Error('解析响应失败：' + e.message))
+          }
+        },
+        fail: function (data, code) {
+          if (settled) return
+          settled = true
+          clearTimer()
+          reject(new Error('请求失败 code=' + code + ' ' + (data || '')))
+        }
+      })
+    } catch (e) {
+      if (!settled) {
+        settled = true
+        clearTimer()
+        reject(new Error('请求异常：' + e.message))
+      }
+    }
   })
 }
 
-export default {
-  chat
-}
+export { chat }
+export default { chat: chat }

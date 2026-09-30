@@ -1,0 +1,9 @@
+{
+  "config": {
+    "designWidth": 466
+  },
+  "display": {
+    "fullScreen": true,
+    "titleBar": false
+  }
+}

@@ -6,7 +6,7 @@
       <text class="title">设置</text>
     </div>
 
-    <scroll class="body" scroll-y="true">
+    <div class="body">
       <!-- 激活状态 -->
       <div class="{{ activated ? 'act-box-ok' : 'act-box-pending' }}">
         <text class="act-label">激活状态：</text>
@@ -67,6 +67,33 @@
         ></input>
       </div>
 
+      <!-- 输入法设置 -->
+      <div class="sec-title"><text>输入法</text></div>
+
+      <div class="row">
+        <text class="label">输入方式</text>
+        <div class="seg-row">
+          <input class="seg-btn {{ form.inputMethod==='official' ? 'seg-active' : '' }}" type="button" value="官方输入法" onclick="onSetInputMethod('official')"></input>
+          <input class="seg-btn {{ form.inputMethod==='pinyin' ? 'seg-active' : '' }}" type="button" value="拼音输入法" onclick="onSetInputMethod('pinyin')"></input>
+        </div>
+      </div>
+
+      <div class="row">
+        <text class="label">拼音布局</text>
+        <div class="seg-row">
+          <input class="seg-btn {{ form.pinyinLayout==='26' ? 'seg-active' : '' }}" type="button" value="26键" onclick="onSetLayout('26')"></input>
+          <input class="seg-btn {{ form.pinyinLayout==='9' ? 'seg-active' : '' }}" type="button" value="9键" onclick="onSetLayout('9')"></input>
+        </div>
+      </div>
+
+      <div class="row">
+        <text class="label">默认语言</text>
+        <div class="seg-row">
+          <input class="seg-btn {{ form.defaultLang==='zh' ? 'seg-active' : '' }}" type="button" value="中文" onclick="onSetLang('zh')"></input>
+          <input class="seg-btn {{ form.defaultLang==='en' ? 'seg-active' : '' }}" type="button" value="英文" onclick="onSetLang('en')"></input>
+        </div>
+      </div>
+
       <!-- 保存 -->
       <input
         class="save-btn"
@@ -99,45 +126,56 @@
         <text class="about-row">开发团队：小默软件工作室</text>
         <text class="about-row">联系方式：zy291817@outlook.com</text>
       </div>
-    </scroll>
+    </div>
   </div>
 </template>
 
 <script>
-import storage from '../../helper/storage.js'
+var storage = require('../../helper/storage.js')
+var router = require('@blueos.app.appmanager.router')
+var prompt = require('@blueos.window.prompt')
 
 export default {
   data: {
-    version: '1.0.7',
+    version: '1.2.6',
     activated: false,
     form: {
       baseUrl: '',
       apiKey: '',
       model: '',
-      systemPrompt: ''
+      systemPrompt: '',
+      inputMethod: 'pinyin',
+      pinyinLayout: '26',
+      defaultLang: 'zh'
     }
   },
 
-  async onInit() {
-    this.activated = await storage.isActivated()
-    const settings = await storage.getSettings()
-    this.form = {
-      baseUrl: settings.baseUrl,
-      apiKey: settings.apiKey,
-      model: settings.model,
-      systemPrompt: settings.systemPrompt
-    }
+  onInit() {
+    var self = this
+    storage.isActivated().then(function (v) {
+      self.activated = v
+      return storage.getSettings()
+    }).then(function (settings) {
+      self.form = {
+        baseUrl: settings.baseUrl,
+        apiKey: settings.apiKey,
+        model: settings.model,
+        systemPrompt: settings.systemPrompt,
+        inputMethod: settings.inputMethod || 'pinyin',
+        pinyinLayout: settings.pinyinLayout || '26',
+        defaultLang: settings.defaultLang || 'zh'
+      }
+    }).catch(function () {})
   },
 
-  async onShow() {
-    // 从激活页返回后刷新激活状态
-    this.activated = await storage.isActivated()
+  onShow() {
+    var self = this
+    storage.isActivated().then(function (v) { self.activated = v }).catch(function () {})
   },
 
   onGotoActivate() {
     try {
-      const router = require('@blueos.app.router')
-      router.push({ uri: '/Activate' })
+      router.push({ uri: '/pages/Activate' })
     } catch (e) {
       console.log('router push failed: ' + e)
     }
@@ -159,12 +197,26 @@ export default {
     this.form.systemPrompt = (e && e.value != null) ? e.value : ''
   },
 
-  async onSave() {
-    const ok = await storage.setSettings(this.form)
-    this.showToast(ok ? '已保存' : '保存失败')
-    if (ok) {
-      this.onBack()
-    }
+  onSetInputMethod(v) {
+    this.form.inputMethod = v
+  },
+
+  onSetLayout(v) {
+    this.form.pinyinLayout = v
+  },
+
+  onSetLang(v) {
+    this.form.defaultLang = v
+  },
+
+  onSave() {
+    var self = this
+    storage.setSettings(this.form).then(function (ok) {
+      self.showToast(ok ? '已保存' : '保存失败')
+      if (ok) {
+        self.onBack()
+      }
+    }).catch(function () {})
   },
 
   onReset() {
@@ -172,7 +224,10 @@ export default {
       baseUrl: storage.DEFAULT_SETTINGS.baseUrl,
       apiKey: '',
       model: storage.DEFAULT_SETTINGS.model,
-      systemPrompt: storage.DEFAULT_SETTINGS.systemPrompt
+      systemPrompt: storage.DEFAULT_SETTINGS.systemPrompt,
+      inputMethod: storage.DEFAULT_SETTINGS.inputMethod,
+      pinyinLayout: storage.DEFAULT_SETTINGS.pinyinLayout,
+      defaultLang: storage.DEFAULT_SETTINGS.defaultLang
     }
   },
 
@@ -180,14 +235,12 @@ export default {
     try {
       this.$page.back && this.$page.back()
     } catch (e) {
-      const router = require('@blueos.app.router')
       router.back && router.back()
     }
   },
 
   showToast(text) {
     try {
-      const prompt = require('@blueos.app.prompt')
       prompt.showToast({ message: text })
     } catch (e) {
       console.log('toast:', text)
@@ -227,7 +280,7 @@ export default {
 }
 
 .body {
-  flex: 1;
+  flex-grow: 1;
   flex-direction: column;
   padding: 12px;
 }
@@ -360,5 +413,38 @@ export default {
   font-size: 20px;
   color: #333333;
   margin-top: 4px;
+}
+
+.sec-title {
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.sec-title text {
+  font-size: 24px;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.seg-row {
+  flex-direction: row;
+}
+
+.seg-btn {
+  flex-grow: 1;
+  height: 58px;
+  font-size: 22px;
+  color: #1890ff;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border-color: #1890ff;
+  border-width: 1px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+.seg-active {
+  color: #ffffff;
+  background-color: #1890ff;
 }
 </style>

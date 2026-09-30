@@ -6,7 +6,7 @@
       <text class="title">激活</text>
     </div>
 
-    <scroll class="body" scroll-y="true">
+    <div class="body">
       <!-- 激活状态 -->
       <div class="{{ activated ? 'status-box-ok' : 'status-box-pending' }}">
         <text class="{{ activated ? 'status-text-ok' : 'status-text-pending' }}">{{ activated ? '已激活' : '未激活' }}</text>
@@ -49,30 +49,33 @@
         <!-- 微信支付二维码 -->
         <div class="qr-wrap">
           <text class="qr-label">微信扫码付款</text>
-          <image class="qr-img" src="/assets/images/wechat-pay-qr.jpg"></image>
+          <image class="qr-img" src="/assets/images/wechat-pay-qr.png"></image>
           <text class="qr-tip">长按识别或截图保存到微信扫一扫</text>
         </div>
 
         <text class="pay-note">获取激活码后填入上方输入框即可离线激活</text>
       </div>
-    </scroll>
+    </div>
   </div>
 </template>
 
 <script>
-import storage from '../../helper/storage.js'
+var storage = require('../../helper/storage.js')
+var router = require('@blueos.app.appmanager.router')
+var prompt = require('@blueos.window.prompt')
 
 export default {
   data: {
     activated: false,
     code: '',
     errMsg: '',
-    price: storage.ACTIVATION_NOTICE.price,
-    contact: storage.ACTIVATION_NOTICE.contact
+    price: (storage && storage.ACTIVATION_NOTICE && storage.ACTIVATION_NOTICE.price) || '4元',
+    contact: (storage && storage.ACTIVATION_NOTICE && storage.ACTIVATION_NOTICE.contact) || 'zy291817@outlook.com'
   },
 
-  async onInit() {
-    this.activated = await storage.isActivated()
+  onInit() {
+    var self = this
+    storage.isActivated().then(function (v) { self.activated = v }).catch(function () {})
   },
 
   onCodeChange(e) {
@@ -80,29 +83,29 @@ export default {
     this.errMsg = ''
   },
 
-  async onActivate() {
-    const ok = await storage.activate(this.code)
-    if (ok) {
-      this.activated = true
-      this.errMsg = ''
-      this.showToast('激活成功')
-    } else {
-      this.errMsg = '激活码错误，请检查'
-    }
+  onActivate() {
+    var self = this
+    storage.activate(this.code).then(function (ok) {
+      if (ok) {
+        self.activated = true
+        self.errMsg = ''
+        self.showToast('激活成功')
+      } else {
+        self.errMsg = '激活码错误，请检查'
+      }
+    }).catch(function () {})
   },
 
   onBack() {
     try {
       this.$page.back && this.$page.back()
     } catch (e) {
-      const router = require('@blueos.app.router')
       router.back && router.back()
     }
   },
 
   showToast(text) {
     try {
-      const prompt = require('@blueos.app.prompt')
       prompt.showToast({ message: text })
     } catch (e) {
       console.log('toast:', text)
@@ -142,7 +145,7 @@ export default {
 }
 
 .body {
-  flex: 1;
+  flex-grow: 1;
   flex-direction: column;
   padding: 12px;
 }

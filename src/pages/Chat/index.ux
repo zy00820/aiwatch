@@ -1,65 +1,52 @@
 <template>
   <div class="container">
-    <!-- 顶部标题栏 -->
     <div class="header">
-      <text class="title">AI 助手</text>
+      <text class="title">全能AI</text>
       <div class="header-actions">
         <text class="action-btn" onclick="onClear">清空</text>
         <text class="action-btn" onclick="onSettings">设置</text>
       </div>
     </div>
 
-    <!-- 消息列表 -->
-    <list class="msg-list" id="msgList">
-      <list-item
-        class="msg-item"
-        type="msg"
-        for="{{ messages }}"
-      >
-        <div class="msg-bubble {{ $item.role === 'user' ? 'msg-user' : 'msg-ai' }}">
+    <div class="msg-list">
+      <div class="msg-item" for="{{ messages }}">
+        <div class="msg-bubble msg-ai" if="{{ $item.role !== 'user' }}">
           <text class="msg-text">{{ $item.content }}</text>
         </div>
-      </list-item>
+        <div class="msg-bubble msg-user" if="{{ $item.role === 'user' }}">
+          <text class="msg-text msg-text-white">{{ $item.content }}</text>
+        </div>
+      </div>
 
-      <!-- 加载中提示 -->
-      <list-item class="msg-item" type="loading" if="{{ loading }}">
+      <div class="msg-item" if="{{ loading }}">
         <div class="msg-bubble msg-ai">
           <text class="msg-text">正在思考…</text>
         </div>
-      </list-item>
+      </div>
 
-      <!-- 空状态 -->
-      <list-item class="msg-item" type="empty" if="{{ messages.length === 0 && !loading }}">
-        <div class="empty-wrap">
-          <text class="empty-text">你好，我是 AI 助手</text>
-          <text class="empty-sub">支持联网，请先在设置中填写 API Key</text>
-        </div>
-      </list-item>
-    </list>
+      <div class="empty-wrap" if="{{ showEmpty }}">
+        <text class="empty-text">你好，我是全能AI</text>
+        <text class="empty-sub">请先在设置中填写 API Key</text>
+      </div>
+    </div>
 
-    <!-- 输入区 -->
     <div class="input-bar">
       <input
-        id="msgInput"
         class="input"
         type="text"
         value="{{ inputText }}"
         placeholder="输入问题"
         onchange="onInputChange"
       ></input>
-      <input
-        class="send-btn"
-        type="button"
-        value="发送"
-        onclick="onSend"
-      ></input>
+      <input class="send-btn" type="button" value="发送" onclick="onSend"></input>
     </div>
   </div>
 </template>
 
 <script>
-import ai from '../../helper/ai.js'
-import storage from '../../helper/storage.js'
+var ai = require('../../helper/ai.js')
+var storage = require('../../helper/storage.js')
+var router = require('@blueos.app.appmanager.router')
 
 export default {
   data: {
@@ -67,145 +54,140 @@ export default {
     loading: false,
     messages: [],
     settings: {},
-    activated: false
+    activated: false,
+    showEmpty: true
   },
 
-  async onInit() {
-    // 激活校验：未激活直接跳激活页
-    const activated = await storage.isActivated()
-    this.activated = activated
-    if (!activated) {
-      this.gotoActivate()
-      return
-    }
-    // 读取本地设置
-    this.settings = await storage.getSettings()
-    // 读取本地历史
-    const history = await storage.getHistory()
-    this.messages = history
-    // 滚动到底部
-    this.delayScroll()
+  onInit() {
+    var self = this
+    try {
+      storage.isActivated().then(function (activated) {
+        self.activated = activated
+        if (!activated) {
+          try { router.push({ uri: '/pages/Activate' }) } catch (e) {}
+          return
+        }
+        return storage.getSettings()
+      }).then(function (s) {
+        if (s) self.settings = s
+        return storage.getHistory()
+      }).then(function (h) {
+        if (h) self.messages = h
+        self.updateEmpty()
+      }).catch(function () {})
+    } catch (e) {}
   },
 
   onShow() {
-    // 从设置页/激活页返回时刷新
-    this.refreshAll()
-  },
-
-  async refreshAll() {
-    const activated = await storage.isActivated()
-    this.activated = activated
-    if (!activated) {
-      this.gotoActivate()
-      return
-    }
-    this.settings = await storage.getSettings()
-  },
-
-  // 跳转激活页
-  gotoActivate() {
+    var self = this
     try {
-      const router = require('@blueos.app.router')
-      router.push({ uri: '/Activate' })
-    } catch (e) {
-      console.log('router push failed: ' + e)
-    }
+      storage.isActivated().then(function (activated) {
+        self.activated = activated
+        if (!activated) {
+          try { router.push({ uri: '/pages/Activate' }) } catch (e) {}
+          return
+        }
+        return storage.getSettings()
+      }).then(function (s) {
+        if (s) self.settings = s
+      }).catch(function () {})
+    } catch (e) {}
   },
 
-  // 输入框内容变化
+  updateEmpty() {
+    this.showEmpty = (this.messages.length === 0 && !this.loading)
+  },
+
   onInputChange(e) {
-    this.inputText = (e && e.value != null) ? e.value : ''
+    var val = ''
+    if (e) {
+      if (e.value != null) val = e.value
+      else if (e.text != null) val = e.text
+      else if (typeof e === 'string') val = e
+    }
+    this.inputText = val
   },
 
-  // 跳转设置页
   onSettings() {
     try {
-      const router = require('@blueos.app.router')
-      router.push({ uri: '/Settings' })
-    } catch (e) {
-      console.log('router push failed: ' + e)
-    }
+      router.push({ uri: '/pages/Settings' })
+    } catch (e) {}
   },
 
-  // 清空对话
-  async onClear() {
+  onClear() {
     this.messages = []
-    await storage.clearHistory()
+    this.updateEmpty()
+    try { storage.clearHistory() } catch (e) {}
   },
 
-  // 发送消息
-  async onSend() {
-    const text = String(this.inputText || '').trim()
+  onSend() {
+    var self = this
+    var text = String(this.inputText || '').trim()
     if (!text) return
     if (this.loading) return
 
-    // 防御性激活检查
-    const activated = await storage.isActivated()
-    if (!activated) {
-      this.activated = false
-      this.pushMessage('assistant', '请先激活应用后再使用')
-      this.gotoActivate()
-      return
-    }
-    this.activated = true
+    self.pushMessage('user', text)
+    self.inputText = ''
+    self.loading = true
+    self.updateEmpty()
 
-    if (!this.settings.apiKey) {
-      this.pushMessage('assistant', '请先在设置中填写 API Key')
-      return
-    }
-
-    // 追加用户消息
-    this.pushMessage('user', text)
-    this.inputText = ''
-    this.loading = true
+    var aiHistory = self.messages.slice(0, -1)
 
     try {
-      const reply = await ai.chat({
-        baseUrl: this.settings.baseUrl,
-        apiKey: this.settings.apiKey,
-        model: this.settings.model,
-        systemPrompt: this.settings.systemPrompt,
-        history: this.messages,
-        userText: text
+      storage.isActivated().then(function (activated) {
+        if (!activated) {
+          self.pushMessage('assistant', '请先激活应用后再使用')
+          self.loading = false
+          self.updateEmpty()
+          try { router.push({ uri: '/pages/Activate' }) } catch (e) {}
+          return
+        }
+        if (!self.settings.apiKey) {
+          self.pushMessage('assistant', '请先在设置中填写 API Key')
+          self.loading = false
+          self.updateEmpty()
+          return
+        }
+        return ai.chat({
+          baseUrl: self.settings.baseUrl,
+          apiKey: self.settings.apiKey,
+          model: self.settings.model,
+          systemPrompt: self.settings.systemPrompt,
+          history: aiHistory,
+          userText: text
+        })
+      }).then(function (reply) {
+        if (reply) self.pushMessage('assistant', reply)
+      }).catch(function (err) {
+        var msg = (err && err.message) ? err.message : '请求失败'
+        self.pushMessage('assistant', '出错：' + msg)
+      }).then(function () {
+        self.loading = false
+        self.updateEmpty()
       })
-      this.pushMessage('assistant', reply)
-    } catch (err) {
-      const msg = (err && err.message) ? err.message : '请求失败'
-      this.pushMessage('assistant', '出错：' + msg)
-    } finally {
-      this.loading = false
+    } catch (e) {
+      self.loading = false
+      self.updateEmpty()
+      self.pushMessage('assistant', '异常：' + (e && e.message ? e.message : e))
     }
   },
 
-  // 追加一条消息并持久化
   pushMessage(role, content) {
-    const item = { role, content, time: Date.now() }
+    var item = { role: role, content: String(content || '') }
     this.messages = this.messages.concat([item])
-    storage.setHistory(this.messages)
-    this.delayScroll()
-  },
-
-  // 延迟滚动到底部，等待渲染完成
-  delayScroll() {
-    setTimeout(() => {
-      try {
-        const list = this.$element('msgList')
-        list && list.revealScrollbar && list.revealScrollbar()
-      } catch (e) {}
-    }, 80)
+    this.updateEmpty()
+    try { storage.setHistory(this.messages) } catch (e) {}
   }
 }
 </script>
 
 <style>
-/* vivo Watch GT2: 432×514 圆角矩形屏幕，designWidth=432 自适应 */
 .container {
   flex-direction: column;
   width: 100%;
   height: 100%;
   background-color: #f5f6f8;
 }
-
 .header {
   height: 60px;
   flex-direction: row;
@@ -215,79 +197,60 @@ export default {
   padding-right: 14px;
   background-color: #1890ff;
 }
-
 .title {
   font-size: 28px;
   color: #ffffff;
   font-weight: bold;
 }
-
 .header-actions {
   flex-direction: row;
   align-items: center;
 }
-
 .action-btn {
   font-size: 22px;
   color: #ffffff;
   margin-left: 16px;
 }
-
 .msg-list {
-  flex: 1;
+  flex-grow: 1;
   flex-direction: column;
   padding: 8px 12px;
 }
-
 .msg-item {
   margin-bottom: 8px;
 }
-
 .msg-bubble {
   padding: 12px 14px;
   border-radius: 12px;
   max-width: 82%;
 }
-
 .msg-ai {
   background-color: #ffffff;
-  align-self: flex-start;
 }
-
 .msg-user {
   background-color: #1890ff;
-  align-self: flex-end;
 }
-
 .msg-text {
   font-size: 24px;
   color: #333333;
-  line-height: 1.4;
 }
-
-.msg-user .msg-text {
+.msg-text-white {
   color: #ffffff;
 }
-
 .empty-wrap {
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   margin-top: 80px;
 }
-
 .empty-text {
   font-size: 26px;
   color: #1890ff;
   margin-bottom: 12px;
 }
-
 .empty-sub {
   font-size: 20px;
   color: #999999;
-  text-align: center;
 }
-
 .input-bar {
   height: 88px;
   flex-direction: row;
@@ -297,9 +260,8 @@ export default {
   border-top-color: #e6e6e6;
   border-top-width: 1px;
 }
-
 .input {
-  flex: 1;
+  flex-grow: 1;
   height: 64px;
   font-size: 24px;
   padding-left: 12px;
@@ -307,7 +269,6 @@ export default {
   background-color: #f0f2f5;
   color: #333333;
 }
-
 .send-btn {
   width: 96px;
   height: 64px;
